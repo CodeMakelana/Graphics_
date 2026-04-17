@@ -32,8 +32,6 @@ public:
     void setY(float y);
     void setZ(float z);
 
-    // --- Member operations ---
-
     // Returns the dot product of this vector with another
     float dot(const Vector3& other) const;
 
@@ -74,8 +72,6 @@ private:
 public:
     // Default constructor: zero-initialise ALL 16 entries.
     Matrix4();
-
-    // ----- Data access -----
 
     // Returns a const pointer to the first element of the internal
     // float[4][4] array, suitable for passing to glUniformMatrix4fv.
