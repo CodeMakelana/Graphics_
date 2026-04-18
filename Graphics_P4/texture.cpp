@@ -1,4 +1,6 @@
 #include "texture.h"
+#include <cmath>
+#include <stdio.h>
 
 GLuint createColourTexture(int width, int height) {
     GLuint textureID;

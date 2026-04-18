@@ -2,8 +2,6 @@
 #define TEXTURE_H
 
 #include <GL/glew.h>
-#include <cmath>
-#include <stdio.h>
 
 GLuint createColourTexture(int width, int height);
 GLuint createDisplacementTexture(int width, int height);
