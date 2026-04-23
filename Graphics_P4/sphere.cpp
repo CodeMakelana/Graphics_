@@ -155,10 +155,26 @@ void drawSphere(const SphereMesh& mesh, bool wireframe) {
 
 void cleanupSphere(SphereMesh& mesh) {
     //delete GPU objs
-    glDeleteBuffers(1, &mesh.VBO);
-    glDeleteBuffers(1, &mesh.EBO);
-    glDeleteBuffers(1, &mesh.wireEBO);
-    glDeleteBuffers(1, &mesh.VAO);
+    if (mesh.VAO != 0) {
+        glDeleteVertexArrays(1, &mesh.VAO);
+        mesh.VAO = 0;
+    }
+    if (mesh.VBO != 0) {
+        glDeleteBuffers(1, &mesh.VBO);
+        mesh.VBO = 0;
+    }
+    if (mesh.EBO != 0) {    
+        glDeleteBuffers(1, &mesh.EBO);
+        mesh.EBO = 0;
+    }
+    if (mesh.wireEBO != 0) {
+        glDeleteBuffers(1, &mesh.wireEBO);
+        mesh.wireEBO = 0;
+    }
+    // glDeleteBuffers(1, &mesh.VBO);
+    // glDeleteBuffers(1, &mesh.EBO);
+    // glDeleteBuffers(1, &mesh.wireEBO);
+    // glDeleteVertexArrays(1, &mesh.VAO);
 
     //free the CPU arrays
     delete [] mesh.vertices;
@@ -171,6 +187,6 @@ void cleanupSphere(SphereMesh& mesh) {
 
     mesh.vertexCount = mesh.indexCount = mesh.wireframeIndexCount = 0;
 
-    mesh.VAO = mesh.VBO = mesh.EBO = mesh.wireEBO = 0;
+    // mesh.VAO = mesh.VBO = mesh.EBO = mesh.wireEBO = 0;
 
 }

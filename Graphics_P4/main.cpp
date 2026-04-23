@@ -12,6 +12,8 @@
 
 #include "shader.hpp"
 #include "light.h"
+#include "MathUtils.h"
+#include "sphere.h"
 
 using namespace glm;
 using namespace std;
@@ -64,20 +66,33 @@ inline GLFWwindow *setUp()
 }
 
 int main() {
-    PointLight light = createDefaultLight(0, 5, 0); // light above origin
+    // PointLight light = createDefaultLight(0, 5, 0); // light above origin
 
-    Vector3 surface(0, 0, 0);
-    Vector3 normal(0, 1, 0);       // flat surface facing up
-    Vector3 material(1, 0.5, 0);   // orange material
+    // Vector3 surface(0, 0, 0);
+    // Vector3 normal(0, 1, 0);       // flat surface facing up
+    // Vector3 material(1, 0.5, 0);   // orange material
 
-    Vector3 result = calculatePointLIght(light, surface, normal, material);
-    printf("Light result: %.3f, %.3f, %.3f\n", result.getX(), result.getY(), result.getZ());
+    // Vector3 result = calculatePointLIght(light, surface, normal, material);
+    // printf("Light result: %.3f, %.3f, %.3f\n", result.getX(), result.getY(), result.getZ());
 
-    // Move light and test again
-    translateLight(light, 10, 0, 0); // move far sideways
-    result = calculatePointLIght(light, surface, normal, material);
-    printf("After translate: %.3f, %.3f, %.3f\n", result.getX(), result.getY(), result.getZ());
+    // // Move light and test again
+    // translateLight(light, 10, 0, 0); // move far sideways
+    // result = calculatePointLIght(light, surface, normal, material);
+    // printf("After translate: %.3f, %.3f, %.3f\n", result.getX(), result.getY(), result.getZ());
 
-    resetLight(light);
-    printf("After reset, pos y: %.3f, %.3f, %.3f\n", light.position.getX(), light.position.getY(), light.position.getZ()); // should be 5
+    // resetLight(light);
+    // printf("After reset, pos y: %.3f, %.3f, %.3f\n", light.position.getX(), light.position.getY(), light.position.getZ()); // should be 5
+
+    //testing the sphere
+
+    SphereMesh mesh = generateSphere(4, 4, 1.0f);
+    std::cout << "Num of stacks: " << mesh.currentStacks << std::endl; // should be 4
+    std::cout << "Num of sectors: " << mesh.currentSectors << std::endl; // should be 4
+    std::cout << "Radius: " << mesh.radius << std::endl; // should be 1.0
+    printf("Sphere vertex count: %d\n", mesh.vertexCount); // should be 121 (11x11)
+    printf("Sphere triangle index count: %d\n", mesh.indexCount); // should be 600 (10x10x6)
+    printf("Sphere wireframe index count: %d\n", mesh.wireframeIndexCount); // should be 400
+    cleanupSphere(mesh);
+
+    return 0;
 }
