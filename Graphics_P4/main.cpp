@@ -65,26 +65,37 @@ inline GLFWwindow *setUp()
     return window;
 }
 
+//setting funcs for testing purposes
+void testPointLight();
+void testSphereMesh();
+
 int main() {
-    // PointLight light = createDefaultLight(0, 5, 0); // light above origin
+   
+    testPointLight();
+    testSphereMesh();
 
-    // Vector3 surface(0, 0, 0);
-    // Vector3 normal(0, 1, 0);       // flat surface facing up
-    // Vector3 material(1, 0.5, 0);   // orange material
+    return 0;
+}
 
-    // Vector3 result = calculatePointLIght(light, surface, normal, material);
-    // printf("Light result: %.3f, %.3f, %.3f\n", result.getX(), result.getY(), result.getZ());
+void testPointLight() {
+    PointLight light = createDefaultLight(0, 5, 0); // light above origin
+    printf("Initial position: %.3f, %.3f, %.3f\n", light.position.getX(), light.position.getY(), light.position.getZ()); // should be (0, 5, 0)
+    printf("Initial colour: %.3f, %.3f, %.3f\n", light.r, light.g, light.b); // should be (1, 1, 1)
+    printf("Initial intensity: %.3f\n", light.intensity); // should be 2.0
 
-    // // Move light and test again
-    // translateLight(light, 10, 0, 0); // move far sideways
-    // result = calculatePointLIght(light, surface, normal, material);
-    // printf("After translate: %.3f, %.3f, %.3f\n", result.getX(), result.getY(), result.getZ());
+    translateLight(light, 10, 0, 0); // move far sideways
+    printf("After translate: %.3f, %.3f, %.3f\n", light.position.getX(), light.position.getY(), light.position.getZ()); // should be (10, 5, 0)
 
-    // resetLight(light);
-    // printf("After reset, pos y: %.3f, %.3f, %.3f\n", light.position.getX(), light.position.getY(), light.position.getZ()); // should be 5
+    setLightColour(light, 0.5f, 0.5f, 1.0f); // change to a blueish colour
+    printf("After colour change: %.3f, %.3f, %.3f\n", light.r, light.g, light.b); // should be (0.5, 0.5, 1)
 
-    //testing the sphere
+    resetLight(light);
+    printf("After reset: position: %.3f, %.3f, %.3f\n", light.position.getX(), light.position.getY(), light.position.getZ()); // should be (0, 5, 0)
+    printf("After reset: colour: %.3f, %.3f, %.3f\n", light.r, light.g, light.b); // should be (1, 1, 1)
+    printf("After reset: intensity: %.3f\n", light.intensity); // should be 2.0
+}
 
+void testSphereMesh() {
     SphereMesh mesh = generateSphere(4, 4, 1.0f);
     std::cout << "Num of stacks: " << mesh.currentStacks << std::endl; // should be 4
     std::cout << "Num of sectors: " << mesh.currentSectors << std::endl; // should be 4
@@ -93,6 +104,4 @@ int main() {
     printf("Sphere triangle index count: %d\n", mesh.indexCount); // should be 600 (10x10x6)
     printf("Sphere wireframe index count: %d\n", mesh.wireframeIndexCount); // should be 400
     cleanupSphere(mesh);
-
-    return 0;
 }
