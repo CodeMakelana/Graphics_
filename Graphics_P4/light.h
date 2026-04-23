@@ -15,6 +15,7 @@ PointLight createDefaultLight(float cx, float cy, float cz);
 void translateLight(PointLight& light, float dx, float dy, float dz);
 void setLightColour(PointLight& light, float r, float g, float b);
 void resetLight(PointLight& light);
-Vector3 calculatePointLIght( PointLight light, Vector3 surfacePoint, Vector3 surfaceNormal, Vector3 materialColour);
+//To be calculcated in fragment shader
+// Vector3 calculatePointLIght( PointLight light, Vector3 surfacePoint, Vector3 surfaceNormal, Vector3 materialColour);
 
 #endif
