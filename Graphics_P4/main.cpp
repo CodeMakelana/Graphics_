@@ -11,6 +11,7 @@
 #include <glm/glm.hpp>
 
 #include "shader.hpp"
+#include "light.h"
 
 using namespace glm;
 using namespace std;
@@ -62,18 +63,21 @@ inline GLFWwindow *setUp()
     return window;
 }
 
-int main()
-{
-    GLFWwindow *window;
-    try
-    {
-        window = setUp();
-    }
-    catch (const char *e)
-    {
-        cout << e << endl;
-        throw;
-    }
+int main() {
+    PointLight light = createDefaultLight(0, 5, 0); // light above origin
 
-    //Add code here
+    Vector3 surface(0, 0, 0);
+    Vector3 normal(0, 1, 0);       // flat surface facing up
+    Vector3 material(1, 0.5, 0);   // orange material
+
+    Vector3 result = calculatePointLIght(light, surface, normal, material);
+    printf("Light result: %.3f, %.3f, %.3f\n", result.getX(), result.getY(), result.getZ());
+
+    // Move light and test again
+    translateLight(light, 10, 0, 0); // move far sideways
+    result = calculatePointLIght(light, surface, normal, material);
+    printf("After translate: %.3f, %.3f, %.3f\n", result.getX(), result.getY(), result.getZ());
+
+    resetLight(light);
+    printf("After reset, pos y: %.3f, %.3f, %.3f\n", light.position.getX(), light.position.getY(), light.position.getZ()); // should be 5
 }
