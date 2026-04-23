@@ -1,1 +1,83 @@
 #include "sphere.h"
+#include <cmath>
+
+const float PI = 3.14159265358979323846f;
+
+SphereMesh generateSphere(int stacks, int sectors, float radius) {
+    SphereMesh mesh;
+    SphereVertex verts;
+    
+    //calc array sizes;
+    mesh.vertexCount = (stacks + 1) * (sectors + 1);
+    mesh.indexCount = stacks * sectors * 6;
+    mesh.wireframeIndexCount = stacks * sectors * 4;
+    mesh.radius = radius;
+
+    //allocate the arrays
+    mesh.vertices = new SphereVertex [mesh.vertexCount];
+    mesh.indices = new unsigned int [mesh.indexCount];
+    mesh.wireframeIndices = new unsigned int [mesh.wireframeIndexCount];
+
+    //vertex loop
+    for (int i = 0; i <= stacks; i++) { //each i reps 1 ring for the sphere
+        float phi = PI * i / stacks;
+        for (int j = 0; j <= sectors; j++) {
+            float theta = 2 * PI * ((float)j / sectors);
+            verts.x = mesh.radius * sin(phi) * cos(theta);
+            verts.y = mesh.radius * cos(phi);
+            verts.z = mesh.radius * sin(phi) * sin(theta);
+
+            verts.nx = verts.x / mesh.radius;
+            verts.ny = verts.y / mesh.radius;
+            verts.nz = verts.z / mesh.radius;
+
+            verts.u = (float)j / sectors;
+            verts.v = (float)i / stacks;
+
+            int indexArray = i * (sectors + 1) + j;
+
+            mesh.vertices[indexArray] = verts;
+        }
+    }
+
+    //triangle index loop
+    int idx = 0;
+    for (int i = 0; i < stacks; i++) {
+        for (int j = 0; j < sectors; j++) {
+            unsigned int k1 = i * (sectors + 1) + j;
+            unsigned int k2 = (i + 1) * (sectors + 1) + j;
+
+            mesh.indices[idx] = k1;
+            mesh.indices[idx + 1] = k2;
+            mesh.indices[idx + 2] = k1 + 1;
+
+            mesh.indices[idx + 3] = k1 + 1;
+            mesh.indices[idx + 4] = k2;
+            mesh.indices[idx + 5] = k2 + 1;
+
+            idx += 6;
+        }
+    }
+
+    //wirframe index
+    int wIdx = 0;
+    for (int i = 0; i < stacks; i++) {
+        for (int j = 0; j < sectors; j++) {
+            unsigned int k1 = i * (sectors + 1) + j;
+            unsigned int k2 = (i + 1) * (sectors + 1) + j;
+            mesh.wireframeIndices[wIdx] = k1;
+            mesh.wireframeIndices[wIdx + 1] = k1 + 1;
+            mesh.wireframeIndices[wIdx + 2] = k1;
+            mesh.wireframeIndices[wIdx + 3] = k2;
+            wIdx += 4;
+        }
+    }
+
+    mesh.currentStacks = stacks;
+    mesh.currentSectors = sectors;
+    mesh.radius = radius;
+
+    mesh.VAO = mesh.VBO = mesh.EBO = mesh.wireEBO = 0; // GPU handles will be set in uploadSphereToGPU
+
+    return mesh;
+}
