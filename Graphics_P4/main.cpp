@@ -70,7 +70,20 @@ void testPointLight();
 void testSphereMesh();
 
 int main() {
+
+    GLFWwindow *window;
+    try
+    {
+        window = setUp();
+    }
+    catch (const char *e)
+    {
+        cout << e << endl;
+        throw;
+    }
    
+    // Add code here
+    
     testPointLight();
     testSphereMesh();
 
