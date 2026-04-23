@@ -81,3 +81,96 @@ SphereMesh generateSphere(int stacks, int sectors, float radius) {
 
     return mesh;
 }
+
+void uploadSphereToGPU(SphereMesh& mesh) {
+    glGenVertexArrays(1, &mesh.VAO);
+    glGenBuffers(1, &mesh.VBO);
+    glGenBuffers(1, &mesh.EBO);
+    glGenBuffers(1, &mesh.wireEBO);
+
+    glBindVertexArray(mesh.VAO);
+
+    // Upload vertex data
+    glBindBuffer(GL_ARRAY_BUFFER, mesh.VBO);
+    glBufferData(GL_ARRAY_BUFFER, mesh.vertexCount * sizeof(SphereVertex), mesh.vertices, GL_STATIC_DRAW);
+
+    // Upload triangle index data
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.indexCount * sizeof(unsigned int), mesh.indices, GL_STATIC_DRAW);
+
+    // Upload wireframe index data
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.wireEBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.wireframeIndexCount * sizeof(unsigned int), mesh.wireframeIndices, GL_STATIC_DRAW);
+
+    // Set up vertex attribute pointers
+    // Position (location 0)
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(SphereVertex), (void*)offsetof(SphereVertex, x));
+    glEnableVertexAttribArray(0);
+    //glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(SphereVertex), (void*)0);
+
+    // Normal (location 1)
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(SphereVertex), (void*)offsetof(SphereVertex, nx));
+    glEnableVertexAttribArray(1);
+
+    // Texcoord (location 2)
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(SphereVertex), (void*)offsetof(SphereVertex, u));
+    glEnableVertexAttribArray(2);
+
+    //unbind
+    // glBindBuffer(GL_ARRAY_BUFFER, 0);
+    // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+}
+
+void updateSphereResolution(SphereMesh& mesh, int newStacks, int newSectors, float radius) {
+
+    if ((newStacks == mesh.currentStacks) && newSectors == mesh.currentSectors) {
+        return;
+    }
+
+    //clean up old GPU buffers since we are updating
+    cleanupSphere(mesh);
+
+    //regenerate
+    mesh = generateSphere(newStacks, newSectors, radius);
+
+    uploadSphereToGPU(mesh);
+
+}
+
+void drawSphere(const SphereMesh& mesh, bool wireframe) {
+    //bind the VAO
+    glBindVertexArray(mesh.VAO);
+
+    //bind right EBO and issue draw call
+
+    if (wireframe) {
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.EBO);
+        glDrawElements(GL_TRIANGLES, mesh.indexCount, GL_UNSIGNED_INT, 0);
+    }
+
+    //unbind
+    glBindVertexArray(0);
+}
+
+void cleanupSphere(SphereMesh& mesh) {
+    //delete GPU objs
+    glDeleteBuffers(1, &mesh.VBO);
+    glDeleteBuffers(1, &mesh.EBO);
+    glDeleteBuffers(1, &mesh.wireEBO);
+    glDeleteBuffers(1, &mesh.VAO);
+
+    //free the CPU arrays
+    delete [] mesh.vertices;
+    delete [] mesh.indices;
+    delete [] mesh.wireframeIndices;
+
+    mesh.vertices = NULL;
+    mesh.indices = NULL;
+    mesh.wireframeIndices = NULL;
+
+    mesh.vertexCount = mesh.indexCount = mesh.wireframeIndexCount = 0;
+
+    mesh.VAO = mesh.VBO = mesh.EBO = mesh.wireEBO = 0;
+
+}
