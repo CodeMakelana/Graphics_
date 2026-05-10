@@ -68,18 +68,10 @@ SceneState createInitialState(float lightCX, float lightCY, float lightCZ) {
 }
 
 void resetScene(SceneState& state) {
-    state.rotX = 0.0f;
-    state.rotY = 0.0f;
-    state.rotZ = 0.0f;
-    state.sphereStacks = 20;
-    state.sphereSectors = 20;
-    state.floorResolution = 10;
-    state.floorColorIndex = 0;
-    state.ballColorIndex = 0;
-    state.lightColorIndex = 0;
-
-    // Reset light to default position and color
-    resetLight(state.light);
+    float cx = state.light.initialPosition.getX();
+    float cy = state.light.initialPosition.getY();
+    float cz = state.light.initialPosition.getZ();
+    state = createInitialState(cx, cy, cz);
 }
 
 void cycleFloorColor(SceneState& state, int direction) {

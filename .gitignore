@@ -1,1 +1,4 @@
 *.zip
+*.o
+main
+Graphics_P4/main
