@@ -1,119 +1,75 @@
 #include "Course.h"
 
 void Course::build() {
-    grassSurface = buildCuboid(6.0, 0.1, 4.0,   0.10,0.60,0.10);
-    grassSurface.upload();
+    grassSurface = buildCuboid(6.0f, 0.01f, 4.0f,  0.2f, 0.6f, 0.2f); // Green
+    
+    wallN = buildCuboid(6.2f, 0.4f, 0.1f,         0.4f, 0.3f, 0.2f); // Brown
+    wallS = buildCuboid(6.2f, 0.4f, 0.1f,         0.4f, 0.3f, 0.2f);
+    wallE = buildCuboid(0.1f, 0.4f, 4.0f,         0.4f, 0.3f, 0.2f);
+    wallW = buildCuboid(0.1f, 0.4f, 4.0f,         0.4f, 0.3f, 0.2f);
 
-    wallNorth = buildCuboid(6.0, 0.4, 0.1,   0.50,0.30,0.10);
-    wallNorth.upload();
-    wallSouth = buildCuboid(6.0, 0.4, 0.1,   0.50,0.30,0.10);
-    wallSouth.upload();
+    startingMat = buildCuboid(0.8f, 0.02f, 0.5f,  0.9f, 0.3f, 0.1f); // Distinct Red/Orange
+    startBall = buildSphere(0.05f, 12, 16, 0.95f, 0.95f, 0.95f);
+    holeCylinder = buildCylinder(0.15f, 0.05f, 16, 0.1f, 0.1f, 0.1f); // Dark 
 
-    wallEast = buildCuboid(0.1, 0.4, 4.0,  0.50,0.30,0.10);
-    wallEast.upload();
-    wallWest = buildCuboid(0.1, 0.4, 4.0,  0.50,0.30,0.10);
-    wallWest.upload();
+    for(int i=0; i<2; i++) {
+        plantStem[i] = buildCylinder(0.05f, 0.4f, 8, 0.3f, 0.2f, 0.1f);
+        plantLeaves[i] = buildCone(0.3f, 0.6f, 10,   0.1f, 0.5f, 0.1f);
+        plantStem[i].upload();
+        plantLeaves[i].upload();
+    }
 
-    startingMat = buildCuboid(0.8, 0.02, 0.5,   0.80,0.40,0.10);
-    startingMat.upload();
-    holeCylinder = buildCylinder(0.15, 0.12, 12,  0.05,0.05,0.05);
-    holeCylinder.upload();
-    holeRim = buildCylinder(0.18, 0.03, 12,  0.70,0.70,0.70);
-    holeRim.upload();
+    vObstacleLeft = buildCuboid(0.8f, 0.05f, 0.05f, 0.9f, 0.9f, 0.9f); 
+    vObstacleRight = buildCuboid(0.8f, 0.05f, 0.05f, 0.9f, 0.9f, 0.9f);
 
-
-    plant1Stem = buildCylinder(0.2, 0.8, 8, 0.50,0.30,0.10);
-    plant1Stem.upload();
-    plant2Stem = buildCylinder(0.2, 0.8, 8, 0.50,0.30,0.10);
-    plant2Stem.upload();
-    plant3Stem = buildCylinder(0.2, 0.8, 8, 0.50,0.30,0.10);
-    plant3Stem.upload();
-
-    plant1Cone = buildCone(0.4, 0.5, 8, 0.10,0.60,0.10);
-    plant1Cone.upload();
-    plant2Cone = buildCone(0.4, 0.5, 8, 0.10,0.60,0.10);
-    plant2Cone.upload();
-    plant3Cone = buildCone(0.4, 0.5, 8, 0.10,0.60,0.10);
-    plant3Cone.upload();
-
-    flagPole = buildCylinder(0.02, 0.8, 8,    0.90,0.90,0.90);
-    flagPole.upload();
-    flagBanner = buildCuboid(0.2, 0.1, 0.02,    0.90,0.10,0.10); 
-    flagBanner.upload();
-
+    grassSurface.upload(); wallN.upload(); wallS.upload(); wallE.upload(); wallW.upload();
+    startingMat.upload(); startBall.upload(); holeCylinder.upload();
+    vObstacleLeft.upload(); vObstacleRight.upload();
 }
 
 void Course::draw(GLuint shaderID, const Matrix4& sceneTransform, bool wireframe) {
     GLint modelLoc = glGetUniformLocation(shaderID, "model");
 
-    //grass surface
-    Matrix4 model = sceneTransform.multiply(Matrix4::translate(0, -0.05, 0));
-    glUniformMatrix4fv(modelLoc,1,GL_TRUE,model.getData());
+    glUniformMatrix4fv(modelLoc, 1, GL_TRUE, sceneTransform.multiply(Matrix4::translate(0, -0.005f, 0)).getData());
     grassSurface.draw(wireframe);
 
-    //walls
-    model = sceneTransform.multiply(Matrix4::translate(0.0, 0.2, -2.0));
-    glUniformMatrix4fv(modelLoc,1,GL_TRUE,model.getData());
-    wallNorth.draw(wireframe);
+    glUniformMatrix4fv(modelLoc, 1, GL_TRUE, sceneTransform.multiply(Matrix4::translate(0, 0.2f, -2.05f)).getData());
+    wallN.draw(wireframe);
+    glUniformMatrix4fv(modelLoc, 1, GL_TRUE, sceneTransform.multiply(Matrix4::translate(0, 0.2f, 2.05f)).getData());
+    wallS.draw(wireframe);
+    glUniformMatrix4fv(modelLoc, 1, GL_TRUE, sceneTransform.multiply(Matrix4::translate(3.05f, 0.2f, 0)).getData());
+    wallE.draw(wireframe);
+    glUniformMatrix4fv(modelLoc, 1, GL_TRUE, sceneTransform.multiply(Matrix4::translate(-3.05f, 0.2f, 0)).getData());
+    wallW.draw(wireframe);
 
-    model = sceneTransform.multiply(Matrix4::translate(0.0, 0.2, 2.0));
-    glUniformMatrix4fv(modelLoc,1,GL_TRUE,model.getData());
-    wallSouth.draw(wireframe);
-
-    model = sceneTransform.multiply(Matrix4::translate(3.0f, 0.2f, 0.0f));
-    glUniformMatrix4fv(modelLoc,1,GL_TRUE,model.getData());
-    wallEast.draw(wireframe);
-
-    model = sceneTransform.multiply(Matrix4::translate(-3.0f, 0.2f, 0.0f));
-    glUniformMatrix4fv(modelLoc,1,GL_TRUE,model.getData());
-    wallWest.draw(wireframe);
-
-    //starting mat
-    model = sceneTransform.multiply(Matrix4::translate(0.0, 0.01, 1.5));
-    glUniformMatrix4fv(modelLoc,1,GL_TRUE,model.getData());
+    glUniformMatrix4fv(modelLoc, 1, GL_TRUE, sceneTransform.multiply(Matrix4::translate(-2.0f, 0.01f, 0)).getData());
     startingMat.draw(wireframe);
+    glUniformMatrix4fv(modelLoc, 1, GL_TRUE, sceneTransform.multiply(Matrix4::translate(-2.0f, 0.07f, 0)).getData());
+    startBall.draw(wireframe);
 
-    //hole
-    model = sceneTransform.multiply(Matrix4::translate(0.0, -0.03, -1.5));
-    glUniformMatrix4fv(modelLoc,1,GL_TRUE,model.getData());
+    glUniformMatrix4fv(modelLoc, 1, GL_TRUE, sceneTransform.multiply(Matrix4::translate(2.5f, 0.0f, 0.0f)).getData());
     holeCylinder.draw(wireframe);
-    
-    model = sceneTransform.multiply(Matrix4::translate(0.0, 0.015, -1.5));
-    glUniformMatrix4fv(modelLoc,1,GL_TRUE,model.getData());
-    holeRim.draw(wireframe);
 
-    //Plants
-    model = sceneTransform.multiply(Matrix4::translate(-3.5, 0.4, 0.0));
-    glUniformMatrix4fv(modelLoc,1,GL_TRUE,model.getData());
-    plant1Stem.draw(wireframe);
+    // Decor outside boundary
+    glUniformMatrix4fv(modelLoc, 1, GL_TRUE, sceneTransform.multiply(Matrix4::translate(-3.5f, 0.2f, 1.5f)).getData());
+    plantStem[0].draw(wireframe);
+    glUniformMatrix4fv(modelLoc, 1, GL_TRUE, sceneTransform.multiply(Matrix4::translate(-3.5f, 0.4f, 1.5f)).getData());
+    plantLeaves[0].draw(wireframe);
 
-    model = sceneTransform.multiply(Matrix4::translate(-3.5, 0.4, 0.0));
-    glUniformMatrix4fv(modelLoc,1,GL_TRUE,model.getData());
-    plant2Stem.draw(wireframe);
+    glUniformMatrix4fv(modelLoc, 1, GL_TRUE, sceneTransform.multiply(Matrix4::translate(3.5f, 0.2f, -1.5f)).getData());
+    plantStem[1].draw(wireframe);
+    glUniformMatrix4fv(modelLoc, 1, GL_TRUE, sceneTransform.multiply(Matrix4::translate(3.5f, 0.4f, -1.5f)).getData());
+    plantLeaves[1].draw(wireframe);
 
-    model = sceneTransform.multiply(Matrix4::translate(-3.5, 0.4, 0.0));
-    glUniformMatrix4fv(modelLoc,1,GL_TRUE,model.getData());
-    plant3Stem.draw(wireframe);
-
-    //Plant cones
-    model = sceneTransform.multiply(Matrix4::translate(-3.5, 0.8, 0.0));
-    glUniformMatrix4fv(modelLoc,1,GL_TRUE,model.getData());
-    plant1Cone.draw(wireframe);
-
-    model = sceneTransform.multiply(Matrix4::translate(3.5, 0.8, -1.0));
-    glUniformMatrix4fv(modelLoc,1,GL_TRUE,model.getData());
-    plant2Cone.draw(wireframe);
-
-    model = sceneTransform.multiply(Matrix4::translate(0.0, 0.8, 2.5));
-    glUniformMatrix4fv(modelLoc,1,GL_TRUE,model.getData());
-    plant3Cone.draw(wireframe);
-
-
-    //Flags
-    model = sceneTransform.multiply(Matrix4::translate(0.15, 0.4, -1.5));
-    glUniformMatrix4fv(modelLoc,1,GL_TRUE,model.getData());
-    flagPole.draw(wireframe);
-
-    model = sceneTransform.multiply(Matrix4::translate(0.25, 0.75, -1.5));
-    glUniformMatrix4fv(modelLoc,1,GL_TRUE,model.getData());
-    flagBanner.draw(wireframe);}
+        Matrix4 mLeftArm = sceneTransform
+            .multiply(Matrix4::translate(-1.2025f, 0.03f, 1.7732f))
+        .multiply(Matrix4::rotateY(135.0f));
+    glUniformMatrix4fv(modelLoc, 1, GL_TRUE, mLeftArm.getData());
+    vObstacleLeft.draw(wireframe);
+ 
+    Matrix4 mRightArm = sceneTransform
+        .multiply(Matrix4::translate(-1.7998f, 0.03f, 1.7732f))
+        .multiply(Matrix4::rotateY(-135.0f));
+    glUniformMatrix4fv(modelLoc, 1, GL_TRUE, mRightArm.getData());
+    vObstacleRight.draw(wireframe);
+}

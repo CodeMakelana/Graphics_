@@ -7,39 +7,20 @@
 #include "ShapeBuilder.h"
 
 struct Course {
-    // Playing surface
     Shape grassSurface;
-
-    // Boundary walls
-    Shape wallNorth;
-    Shape wallSouth;
-    Shape wallEast;
-    Shape wallWest;
-
-    // Tee box
+    Shape wallN, wallS, wallE, wallW;
     Shape startingMat;
-
-    // Hole
+    Shape startBall;
     Shape holeCylinder;
-    Shape holeRim;
-
-    // Decorative plants (stem + cone canopy each)
-    Shape plant1Stem;
-    Shape plant2Stem;
-    Shape plant3Stem;
-    Shape plant1Cone;
-    Shape plant2Cone;
-    Shape plant3Cone;
-
-    // Flag at the hole
+    Shape plantStem[2];
+    Shape plantLeaves[2];
     Shape flagPole;
     Shape flagBanner;
+    Shape vObstacleLeft;
+    Shape vObstacleRight;
 
-    // Create all shapes and call upload() on each
     void build();
-
-    // Send geometry to the GPU
     void draw(GLuint shaderID, const Matrix4& sceneTransform, bool wireframe);
 };
 
-#endif // COURSE_H
+#endif

@@ -1,104 +1,93 @@
 #include "Windmill.h"
 
 void Windmill::build() {
+    // Red frustum tower and legs for ball gap
+    body = buildFrustum(0.8f, 1.2f, 0.8f, 0.5f,  0.8f, 0.1f, 0.1f);
+    legLeft = buildCuboid(0.2f, 0.4f, 0.8f,      0.8f, 0.1f, 0.1f);
+    legRight = buildCuboid(0.2f, 0.4f, 0.8f,     0.8f, 0.1f, 0.1f);
+    roof = buildTriangularPrism(0.8f, 0.5f, 0.4f, 0.6f, 0.0f, 0.0f);
     
-    body = buildCuboid(0.6f, 1.6f, 0.6f,  0.80f,0.70f,0.50f);
-    legLeft = buildCuboid(0.2f, 0.4f, 0.6f,  0.70f,0.60f,0.45f);
-    legRight = buildCuboid(0.2f, 0.4f, 0.6f,  0.70f,0.60f,0.45f);
+    // Metallic gray cylinder axle (>= 8 vertices)
+    axle = buildCylinder(0.04f, 0.3f, 12,        0.7f, 0.7f, 0.7f);
+    
+    // White cuboid blades
+    for(int i=0; i<4; i++) {
+        bladeStems[i] = buildCuboid(0.04f, 0.4f, 0.02f, 0.9f, 0.9f, 0.8f); 
+        bladeStems[i].upload();
+        
+        // The wider white paddle at the end
+        bladeSails[i] = buildCuboid(0.18f, 0.50f, 0.02f, 1.0f, 1.0f, 1.0f);
+        bladeSails[i].upload();
+    }
 
-    roof = buildTriangularPrism(0.7f, 0.4f, 0.7f,  0.60f,0.30f,0.20f);
-
-    archLeft = buildCuboid(0.08f, 0.45f, 0.08f,  0.50f,0.50f,0.50f);
-    archRight = buildCuboid(0.08f, 0.45f, 0.08f,  0.50f,0.50f,0.50f);
-    archTop = buildCuboid(0.64f, 0.08f, 0.08f,  0.50f,0.50f,0.50f);
-
-    //upload the shapes
     body.upload();
     legLeft.upload();
     legRight.upload();
-
     roof.upload();
+    axle.upload();
 
-    archLeft.upload();
-    archRight.upload();
-    archTop.upload();
+    // Windows: one on each side face of the tower body
+    windowLeft  = buildCuboid(0.14f, 0.14f, 0.02f, 0.55f, 0.75f, 0.90f);
+    windowRight = buildCuboid(0.14f, 0.14f, 0.02f, 0.55f, 0.75f, 0.90f);
 
-    for (int i = 0; i < 4; i++) {
-        blades[i] = buildCuboid(0.10f, 0.67f, 0.02f,  0.85f,0.85f,0.85f);
-        blades[i].upload();
-    }
+    windowLeft.upload();
+    windowRight.upload();
 
-    //initialise animation
     bladeAngle = 0.0f;
     bladeSpeed = 0.0f;
-    bladeAxis = Vector3(0.0f, 0.0f, 1.0f);
-    localTransform = Matrix4::translate(1.5f, 0.8f, -1.5f);
+    localTransform = Matrix4::translate(0.0f, 0.0f, 0.0f).multiply(Matrix4::rotateY(270.0f));
 }
 
 void Windmill::update(float dt) {
     bladeAngle += bladeSpeed * dt;
-
-    if (bladeAngle >= 360.0f) {
-        bladeAngle -= 360.0f;
-    }
+    if (bladeAngle >= 360.0f) bladeAngle -= 360.0f;
 }
 
 void Windmill::draw(GLuint shaderID, const Matrix4& sceneTransform, bool wireframe) {
     GLint modelLoc = glGetUniformLocation(shaderID, "model");
-    Matrix4 windmillBase = sceneTransform.multiply(localTransform);
+    Matrix4 base = sceneTransform.multiply(localTransform);
 
-    //Body
-    Matrix4 model = windmillBase.multiply(Matrix4::identity());
-    glUniformMatrix4fv(modelLoc,1,GL_TRUE,model.getData());
+    // Tower Structure
+    glUniformMatrix4fv(modelLoc, 1, GL_TRUE, base.multiply(Matrix4::translate(0, 0.8f, 0)).getData());
     body.draw(wireframe);
 
-    //legLeft
-    Matrix4 model1 = windmillBase.multiply(Matrix4::translate(-0.2f, 0.2f, 0.0f));
-    glUniformMatrix4fv(modelLoc,1,GL_TRUE,model1.getData());
+    glUniformMatrix4fv(modelLoc, 1, GL_TRUE, base.multiply(Matrix4::translate(-0.3f, 0.2f, 0)).getData());
     legLeft.draw(wireframe);
 
-    //right leg
-    Matrix4 model2 = windmillBase.multiply(Matrix4::translate(0.2f, 0.2f, 0.0f));
-    glUniformMatrix4fv(modelLoc,1,GL_TRUE,model2.getData());
+    glUniformMatrix4fv(modelLoc, 1, GL_TRUE, base.multiply(Matrix4::translate(0.3f, 0.2f, 0)).getData());
     legRight.draw(wireframe);
 
-    //roof
-    Matrix4 model3 = windmillBase.multiply(Matrix4::translate(0.0f, 0.8f, -0.35f));
-    glUniformMatrix4fv(modelLoc,1,GL_TRUE,model3.getData());
+    glUniformMatrix4fv(modelLoc, 1, GL_TRUE, base.multiply(Matrix4::translate(0, 1.4f, -0.2f)).getData());
     roof.draw(wireframe);
 
-    //left arch
-    Matrix4 model4 = windmillBase.multiply(Matrix4::translate(-0.24f, -0.575f, 0.3f));
-    glUniformMatrix4fv(modelLoc,1,GL_TRUE,model4.getData());
-    archLeft.draw(wireframe);
+    // One window on each side face of the tower body (local +X and -X)
+    glUniformMatrix4fv(modelLoc, 1, GL_TRUE,
+        base.multiply(Matrix4::translate(0.27f, 1.05f, 0.0f)).multiply(Matrix4::rotateY(90.0f)).getData());
+    windowLeft.draw(wireframe);
+    glUniformMatrix4fv(modelLoc, 1, GL_TRUE,
+        base.multiply(Matrix4::translate(-0.27f, 1.05f, 0.0f)).multiply(Matrix4::rotateY(90.0f)).getData());
+    windowRight.draw(wireframe);
 
-    //right arch
-    Matrix4 model5 = windmillBase.multiply(Matrix4::translate(0.24f, -0.575f, 0.3f));
-    glUniformMatrix4fv(modelLoc,1,GL_TRUE,model5.getData());
-    archRight.draw(wireframe);
-
-    //top arch
-    Matrix4 model6 = windmillBase.multiply(Matrix4::translate(0.0f, -0.35f, 0.3f));
-    glUniformMatrix4fv(modelLoc,1,GL_TRUE,model6.getData());
-    archTop.draw(wireframe);
-
-    //axle
-    Matrix4 model7 = windmillBase.multiply(Matrix4::translate(0,1.0f,0.5f).multiply(Matrix4::rotateX(90)));
-    glUniformMatrix4fv(modelLoc,1,GL_TRUE,model7.getData());
+    // Animated Rotor Assembly
+    Matrix4 rotorBase = base.multiply(Matrix4::translate(0, 1.0f, 0.35f));
+    
+    // Axle
+    glUniformMatrix4fv(modelLoc, 1, GL_TRUE, rotorBase.multiply(Matrix4::rotateX(90)).getData());
     axle.draw(wireframe);
 
-    //blades
-    Matrix4 bladeInner = Matrix4::translate(0.0f, 0.335f, 0.0f);
-    Matrix4 axlePos = Matrix4::translate(0.0f, 1.0f, 0.5f);
-    for (int i = 0; i < 4; i++) {
-        Matrix4 bladeRot = Matrix4::rotateArbitraryAxis(
-            Vector3(0.0f, 0.0f, 1.0f),
-            bladeAngle + i * 90.0f
-        );
-        Matrix4 bladeModel = windmillBase.multiply(axlePos)
-                                         .multiply(bladeRot)
-                                         .multiply(bladeInner);
-        glUniformMatrix4fv(modelLoc, 1, GL_TRUE, bladeModel.getData());
-        blades[i].draw(wireframe);
+    // Blades (Rotating around Local Z)
+    for(int i=0; i<4; i++) {
+        Matrix4 rot = Matrix4::rotateZ(bladeAngle + (i * 90.0f));
+        
+        // Draw the narrow stem (closer to the center)
+        Matrix4 mStem = rotorBase.multiply(rot).multiply(Matrix4::translate(0.0f, 0.2f, 0.15f));
+        glUniformMatrix4fv(modelLoc, 1, GL_TRUE, mStem.getData());
+        bladeStems[i].draw(wireframe);
+
+        // Draw the wider sail: shifted in +X so the stem sits on its left edge
+        // Y translation keeps a small overlap with the 0.4f stem
+        Matrix4 mSail = rotorBase.multiply(rot).multiply(Matrix4::translate(0.1f, 0.58f, 0.16f)); 
+        glUniformMatrix4fv(modelLoc, 1, GL_TRUE, mSail.getData());
+        bladeSails[i].draw(wireframe);
     }
 }

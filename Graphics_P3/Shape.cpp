@@ -33,8 +33,10 @@ void Shape::upload() {
 void Shape::draw(bool wireframe) {
     glBindVertexArray(VAO);
     if (wireframe) {
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, wireEBO);
-        glDrawElements(GL_LINES, wireIndices.size(), GL_UNSIGNED_INT, 0);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+        glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     } else {
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
         glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
