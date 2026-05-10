@@ -98,8 +98,9 @@ int main() {
     }
     glfwTerminate();
 
-    //now to make everything work. We code up the main since all other files are done. We will create the shader, create the plane and sphere meshes, upload them to the GPU, and then in the draw loop we will draw them. We will also need to set up the scene state and handle user input to change the resolution and colors.
-    SceneState sceneState = createInitialState(0.0f, 5.0f, 0.0f);
+    SceneState state;
+
+    state = createInitialState(0, 0, 0); // light at origin for testing 
 
     
 
