@@ -84,6 +84,13 @@ void cycleBallColor(SceneState& state, int direction) {
 
 void cycleLightColor(SceneState& state, int direction) {
     state.lightColorIndex = (state.lightColorIndex + direction + 9) % 9;
+
+    //after cycling call setLightColour from light.h to apply the new colour light
+
+    setLightColour(state.light, 
+        state.lightColors[state.lightColorIndex][0], 
+        state.lightColors[state.lightColorIndex][1], 
+        state.lightColors[state.lightColorIndex][2]);
 }
 
 void adjustAlpha(SceneState& state, float delta) {
