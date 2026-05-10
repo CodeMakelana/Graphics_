@@ -8,7 +8,7 @@ layout(location = 2) in vec2 aUV;
 //Unifroms
 uniform mat4 uModel;        //scene rotation Matrix
 uniform mat4 uView;         //the lookAt function output
-unifomr mat4 uProjection;    //perspective output
+uniform mat4 uProjection;    //perspective output
 
 //outputs
 out vec3 vWorldPos;         //World space Position

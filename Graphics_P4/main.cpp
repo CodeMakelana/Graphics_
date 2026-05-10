@@ -97,12 +97,7 @@ int main() {
         glfwDestroyWindow(window);
     }
     glfwTerminate();
-
-    SceneState state;
-
-    state = createInitialState(0, 0, 0); // light at origin for testing 
-
-    
+        
 
     return 0;
 }
