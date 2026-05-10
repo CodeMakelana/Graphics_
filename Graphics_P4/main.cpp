@@ -12,6 +12,7 @@
 
 #include "shader.hpp"
 #include "light.h"
+#include "texture.h"
 #include "MathUtils.h"
 #include "sphere.h"
 #include "plane.h"
