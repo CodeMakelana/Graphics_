@@ -21,6 +21,9 @@
 using namespace glm;
 using namespace std;
 
+// Global — GLFW key callbacks are static and cannot capture locals
+SceneState state;
+
 const char *getError()
 {
     const char *errorDescription;
@@ -53,28 +56,82 @@ inline GLFWwindow *setUp()
     glfwWindowHint(GLFW_SAMPLES, 4);               // 4x antialiasing
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); // We want OpenGL 3.3
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);           // To make MacOS happy; should not be needed
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // We don't want the old OpenGL
-    GLFWwindow *window;                                             // (In the accompanying source code, this variable is global for simplicity)
-    window = glfwCreateWindow(1000, 1000, "u23588579", NULL, NULL);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    GLFWwindow *window = glfwCreateWindow(1000, 1000, "u23588579", NULL, NULL);
     if (window == NULL)
     {
         cout << getError() << endl;
         glfwTerminate();
         throw "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.\n";
     }
-    glfwMakeContextCurrent(window); // Initialize GLEW
+    glfwMakeContextCurrent(window);
     startUpGLEW();
     return window;
 }
 
-//setting funcs for testing purposes
+void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
+{
+    if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
+        resetScene(state);
+
+    // Sphere rotation
+    if (key == GLFW_KEY_W && (action == GLFW_PRESS || action == GLFW_REPEAT))
+        state.rotX += 2.0f;
+    if (key == GLFW_KEY_S && (action == GLFW_PRESS || action == GLFW_REPEAT))
+        state.rotX -= 2.0f;
+    if (key == GLFW_KEY_A && (action == GLFW_PRESS || action == GLFW_REPEAT))
+        state.rotY -= 2.0f;
+    if (key == GLFW_KEY_D && (action == GLFW_PRESS || action == GLFW_REPEAT))
+        state.rotY += 2.0f;
+    if (key == GLFW_KEY_Q && (action == GLFW_PRESS || action == GLFW_REPEAT))
+        state.rotZ -= 2.0f;
+    if (key == GLFW_KEY_E && (action == GLFW_PRESS || action == GLFW_REPEAT))
+        state.rotZ += 2.0f;
+
+    // Wireframe toggle — 300 ms debounce prevents flicker from key repeat
+    if (key == GLFW_KEY_ENTER && action == GLFW_PRESS)
+    {
+        double currentTime = glfwGetTime();
+        if (currentTime - state.lastWireframeToggle > 0.3)
+        {
+            state.wireframeEnabled = !state.wireframeEnabled;
+            state.lastWireframeToggle = currentTime;
+        }
+    }
+
+    // Alpha
+    if (key == GLFW_KEY_UP && (action == GLFW_PRESS || action == GLFW_REPEAT))
+        adjustAlpha(state, 0.05f);
+    if (key == GLFW_KEY_DOWN && (action == GLFW_PRESS || action == GLFW_REPEAT))
+        adjustAlpha(state, -0.05f);
+
+    // Floor colour (left / right arrow)
+    if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS)
+        cycleFloorColor(state, 1);
+    if (key == GLFW_KEY_LEFT && action == GLFW_PRESS)
+        cycleFloorColor(state, -1);
+
+    // Ball colour (Z / X)
+    if (key == GLFW_KEY_Z && action == GLFW_PRESS)
+        cycleBallColor(state, -1);
+    if (key == GLFW_KEY_X && action == GLFW_PRESS)
+        cycleBallColor(state, 1);
+
+    // Light colour (K / L)
+    if (key == GLFW_KEY_K && action == GLFW_PRESS)
+        cycleLightColor(state, -1);
+    if (key == GLFW_KEY_L && action == GLFW_PRESS)
+        cycleLightColor(state, 1);
+}
+
+// Forward declarations for test helpers at the bottom of this file
 void testPointLight();
 void testSphereMesh();
 void testPlaneMesh(bool hasGL);
 
-int main() {
-
+int main()
+{
     GLFWwindow *window = nullptr;
     try
     {
@@ -83,22 +140,106 @@ int main() {
     catch (const char *e)
     {
         cout << e << endl;
+        return 1;
     }
 
-    // TODO: scene wiring goes here (shader, uniforms, draw loop)
+    state = createInitialState(0.0f, 0.0f, 0.0f);
 
-    // testPointLight();
-    // testSphereMesh();
-    testPlaneMesh(window != nullptr);
+    GLuint sphereShader = LoadShaders("sphere.vert", "sphere.frag");
+    GLuint floorShader  = LoadShaders("floor.vert",  "floor.frag");
 
-    //now wire up the scene and draw the plane and sphere using the shader, then call cleanupSphere and cleanupPlane before exiting
+    SphereMesh ball  = generateSphere(state.sphereStacks, state.sphereSectors, 1.0f);
+    uploadSphereToGPU(ball);
 
-    if (window) {
-        glfwDestroyWindow(window);
+    PlaneMesh ground = generatePlane(state.floorResolution, 10.0f);
+    uploadPlaneToGPU(ground);
+
+    GLuint colourTex       = createColourTexture(512, 512);
+    GLuint displacementTex = createDisplacementTexture(512, 512);
+    GLuint alphaTex        = createAlphaTexture(512, 512);
+
+    glfwSetKeyCallback(window, keyCallback);
+
+    // Fixed camera
+    Matrix4 view = Matrix4::lookAt(
+        Vector3(0.0f, 4.0f, 7.0f),
+        Vector3(0.0f, 0.0f, 0.0f),
+        Vector3(0.0f, 1.0f, 0.0f)
+    );
+    Matrix4 proj = Matrix4::perspective(45.0f, 1.0f, 0.1f, 100.0f);
+
+    glEnable(GL_DEPTH_TEST);
+
+    while (!glfwWindowShouldClose(window))
+    {
+        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        updateSphereResolution(ball, state.sphereStacks, state.sphereSectors, 1.0f);
+
+        // Build model matrix from current rotations
+        Matrix4 model = Matrix4::rotateX(state.rotX)
+            .multiply(Matrix4::rotateY(state.rotY))
+            .multiply(Matrix4::rotateZ(state.rotZ));
+
+        // --- Draw floor ---
+        glUseProgram(floorShader);
+        glUniformMatrix4fv(glGetUniformLocation(floorShader, "uModel"),      1, GL_TRUE, Matrix4::identity().getData());
+        glUniformMatrix4fv(glGetUniformLocation(floorShader, "uView"),       1, GL_TRUE, view.getData());
+        glUniformMatrix4fv(glGetUniformLocation(floorShader, "uProjection"), 1, GL_TRUE, proj.getData());
+        glUniform3f(glGetUniformLocation(floorShader, "uLightPos"),
+            state.light.position.getX(),
+            state.light.position.getY(),
+            state.light.position.getZ());
+        glUniform3f(glGetUniformLocation(floorShader, "uLightColour"),
+            state.light.r, state.light.g, state.light.b);
+        glUniform1f(glGetUniformLocation(floorShader, "uLightIntensity"), state.light.intensity);
+        glUniform3f(glGetUniformLocation(floorShader, "uFloorColour"),
+            state.floorColors[state.floorColorIndex][0],
+            state.floorColors[state.floorColorIndex][1],
+            state.floorColors[state.floorColorIndex][2]);
+        glUniform4f(glGetUniformLocation(floorShader, "uBallColour"),
+            state.ballColors[state.ballColorIndex][0],
+            state.ballColors[state.ballColorIndex][1],
+            state.ballColors[state.ballColorIndex][2],
+            state.alpha);
+        drawPlane(ground, false);
+
+        // --- Draw sphere ---
+        glUseProgram(sphereShader);
+        glUniformMatrix4fv(glGetUniformLocation(sphereShader, "uModel"),      1, GL_TRUE, model.getData());
+        glUniformMatrix4fv(glGetUniformLocation(sphereShader, "uView"),       1, GL_TRUE, view.getData());
+        glUniformMatrix4fv(glGetUniformLocation(sphereShader, "uProjection"), 1, GL_TRUE, proj.getData());
+        bindTexture(colourTex,       0, sphereShader, "uColourTex");
+        bindTexture(displacementTex, 1, sphereShader, "uDisplacementTex");
+        bindTexture(alphaTex,        2, sphereShader, "uAlphaTex");
+        glUniform1i(glGetUniformLocation(sphereShader, "uColourTexEnabled"),     state.colourTexEnabled);
+        glUniform1i(glGetUniformLocation(sphereShader, "uDisplacementEnabled"),  state.displacementTexEnabled);
+        glUniform1i(glGetUniformLocation(sphereShader, "uAlphaTexEnabled"),      state.alphaTexEnabled);
+        glUniform1f(glGetUniformLocation(sphereShader, "uDisplacementStrength"), 0.05f);
+        glUniform4f(glGetUniformLocation(sphereShader, "uBallColour"),
+            state.ballColors[state.ballColorIndex][0],
+            state.ballColors[state.ballColorIndex][1],
+            state.ballColors[state.ballColorIndex][2],
+            state.alpha);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        drawSphere(ball, state.wireframeEnabled);
+        glDisable(GL_BLEND);
+
+        glfwSwapBuffers(window);
+        glfwPollEvents();
     }
+
+    cleanupSphere(ball);
+    cleanupPlane(ground);
+    glDeleteTextures(1, &colourTex);
+    glDeleteTextures(1, &displacementTex);
+    glDeleteTextures(1, &alphaTex);
+    glDeleteProgram(sphereShader);
+    glDeleteProgram(floorShader);
+    glfwDestroyWindow(window);
     glfwTerminate();
-        
-
     return 0;
 }
 
