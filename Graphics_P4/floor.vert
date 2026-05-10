@@ -22,7 +22,7 @@ void main() {
     //vWorldPos = worldPos4.y;
     //vWorldPos = worldPos4.z;
 
-    vWorldNormal = (uModel * vWorldNormal, 0, 0).xyz;
+    vWorldNormal = normalize(mat3(uModel) * aNormal);
 
     gl_Position = uProjection * uView * worldPos4;
     vUV = aUV;

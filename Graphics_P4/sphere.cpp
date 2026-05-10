@@ -139,17 +139,16 @@ void updateSphereResolution(SphereMesh& mesh, int newStacks, int newSectors, flo
 }
 
 void drawSphere(const SphereMesh& mesh, bool wireframe) {
-    //bind the VAO
     glBindVertexArray(mesh.VAO);
 
-    //bind right EBO and issue draw call
-
     if (wireframe) {
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.wireEBO);
+        glDrawElements(GL_LINES, mesh.wireframeIndexCount, GL_UNSIGNED_INT, 0);
+    } else {
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.EBO);
         glDrawElements(GL_TRIANGLES, mesh.indexCount, GL_UNSIGNED_INT, 0);
     }
 
-    //unbind
     glBindVertexArray(0);
 }
 

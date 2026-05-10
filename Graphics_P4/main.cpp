@@ -140,8 +140,8 @@ int main()
     catch (const char *e)
     {
         cout << e << endl;
-        return 1;
     }
+    if (!window) return 1;
 
     state = createInitialState(0.0f, 0.0f, 0.0f);
 
