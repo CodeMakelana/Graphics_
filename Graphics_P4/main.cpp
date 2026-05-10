@@ -56,16 +56,17 @@ inline GLFWwindow *setUp()
     glfwWindowHint(GLFW_SAMPLES, 4);               // 4x antialiasing
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); // We want OpenGL 3.3
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    GLFWwindow *window = glfwCreateWindow(1000, 1000, "u23588579", NULL, NULL);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);           // To make MacOS happy; should not be needed
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // We don't want the old OpenGL
+    GLFWwindow *window;
+    window = glfwCreateWindow(1000, 1000, "u23588579", NULL, NULL);
     if (window == NULL)
     {
         cout << getError() << endl;
         glfwTerminate();
         throw "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.\n";
     }
-    glfwMakeContextCurrent(window);
+    glfwMakeContextCurrent(window); // Initialize GLEW
     startUpGLEW();
     return window;
 }
@@ -125,14 +126,13 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
         cycleLightColor(state, 1);
 }
 
-// Forward declarations for test helpers at the bottom of this file
 void testPointLight();
 void testSphereMesh();
 void testPlaneMesh(bool hasGL);
 
 int main()
 {
-    GLFWwindow *window = nullptr;
+    GLFWwindow *window;
     try
     {
         window = setUp();
@@ -140,8 +140,10 @@ int main()
     catch (const char *e)
     {
         cout << e << endl;
+        throw;
     }
-    if (!window) return 1;
+
+    // ---- Add code here ----
 
     state = createInitialState(0.0f, 0.0f, 0.0f);
 
@@ -278,17 +280,15 @@ void testPlaneMesh(bool hasGL) {
     float size = 2.0f;
     PlaneMesh mesh = generatePlane(N, size);
 
-    // Count checks
     printf("Resolution: %d (expect %d)\n", mesh.currentResolution, N);
     printf("Size: %.1f (expect %.1f)\n", mesh.size, size);
-    printf("Vertex count: %d (expect %d)\n", mesh.vertexCount, (N+1)*(N+1));        // 25
-    printf("Triangle index count: %d (expect %d)\n", mesh.indexCount, N*N*6);        // 96
-    printf("Wireframe index count: %d (expect %d)\n", mesh.wireframeIndexCount, N*N*8); // 128
+    printf("Vertex count: %d (expect %d)\n", mesh.vertexCount, (N+1)*(N+1));
+    printf("Triangle index count: %d (expect %d)\n", mesh.indexCount, N*N*6);
+    printf("Wireframe index count: %d (expect %d)\n", mesh.wireframeIndexCount, N*N*8);
 
-    // Corner vertex positions  (negReach = -1, stepSize = 0.5 for size=2, N=4)
-    PlaneVertex& v00 = mesh.vertices[0];               // i=0, j=0
-    PlaneVertex& v0N = mesh.vertices[N];               // i=0, j=N
-    PlaneVertex& vNN = mesh.vertices[N*(N+1) + N];     // i=N, j=N
+    PlaneVertex& v00 = mesh.vertices[0];
+    PlaneVertex& v0N = mesh.vertices[N];
+    PlaneVertex& vNN = mesh.vertices[N*(N+1) + N];
     printf("v[0,0] pos:    (%.2f, %.2f, %.2f) expect (-1.00, 0.00, -1.00)\n", v00.x, v00.y, v00.z);
     printf("v[0,N] pos:    (%.2f, %.2f, %.2f) expect ( 1.00, 0.00, -1.00)\n", v0N.x, v0N.y, v0N.z);
     printf("v[N,N] pos:    (%.2f, %.2f, %.2f) expect ( 1.00, 0.00,  1.00)\n", vNN.x, vNN.y, vNN.z);
@@ -296,18 +296,14 @@ void testPlaneMesh(bool hasGL) {
     printf("v[0,0] uv:     (%.2f, %.2f)           expect (0.00, 0.00)\n", v00.u, v00.v);
     printf("v[N,N] uv:     (%.2f, %.2f)           expect (1.00, 1.00)\n", vNN.u, vNN.v);
 
-    // Triangle indices for first quad (i=0, j=0): topLeft=0, bottomLeft=5, topRight=1, bottomRight=6
     printf("tri[0]: %u %u %u (expect 0 5 1)\n", mesh.indices[0], mesh.indices[1], mesh.indices[2]);
     printf("tri[1]: %u %u %u (expect 1 5 6)\n", mesh.indices[3], mesh.indices[4], mesh.indices[5]);
-
-    // Wireframe indices for first quad: k1=0, k2=5, k3=1, k4=6  ->  0 5 5 6 6 1 1 0
     printf("wire[0]: %u %u %u %u %u %u %u %u (expect 0 5 5 6 6 1 1 0)\n",
         mesh.wireframeIndices[0], mesh.wireframeIndices[1],
         mesh.wireframeIndices[2], mesh.wireframeIndices[3],
         mesh.wireframeIndices[4], mesh.wireframeIndices[5],
         mesh.wireframeIndices[6], mesh.wireframeIndices[7]);
 
-    // GPU handles should be 0 before upload
     printf("VAO before upload: %u (expect 0)\n", mesh.VAO);
 
     if (hasGL) {
@@ -316,7 +312,6 @@ void testPlaneMesh(bool hasGL) {
         printf("VBO after upload: %u (expect non-zero)\n", mesh.VBO);
         printf("EBO after upload: %u (expect non-zero)\n", mesh.EBO);
         printf("wireEBO after upload: %u (expect non-zero)\n", mesh.wireEBO);
-
         cleanupPlane(mesh);
         printf("VAO after cleanup: %u (expect 0)\n", mesh.VAO);
         printf("Vertex count after cleanup: %d (expect 0)\n", mesh.vertexCount);
