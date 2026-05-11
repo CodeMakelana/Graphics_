@@ -20,9 +20,11 @@ out vec3 vNormal;
 
 void main() {
     vec3 pos = aPos;
-    float dispSample = texture(uDisplacementTex, aUV).r;
-    float dispAmount = (1.0 - dispSample) * uDisplacementStrength;
-    pos = pos - aNormal * dispAmount;
+    if (uDisplacementEnabled) {
+        float dispSample = texture(uDisplacementTex, aUV).r;
+        float dispAmount = (1.0 - dispSample) * uDisplacementStrength;
+        pos = pos - aNormal * dispAmount;
+    }   
 
     vec4 worldPos = uModel * vec4(pos, 1.0);
     gl_Position = uProjection * uView * worldPos;

@@ -43,10 +43,13 @@ inline void startUpGLFW()
 inline void startUpGLEW()
 {
     glewExperimental = true; // Needed in core profile
-    if (glewInit() != GLEW_OK)
+    GLenum glewErr = glewInit();
+    // GLEW_ERROR_NO_GLX_DISPLAY (4) is a false positive when GLFW owns the context;
+    // GL functions are still loaded. Only abort on errors that actually break loading.
+    if (glewErr != GLEW_OK && glewErr != 4)
     {
         glfwTerminate();
-        throw getError();
+        throw "GLEW failed to initialise.\n";
     }
 }
 
@@ -62,7 +65,8 @@ inline GLFWwindow *setUp()
     window = glfwCreateWindow(1000, 1000, "u23588579", NULL, NULL);
     if (window == NULL)
     {
-        cout << getError() << endl;
+        const char *err = getError();
+        fprintf(stderr, "glfwCreateWindow failed: %s\n", err ? err : "(no description)");
         glfwTerminate();
         throw "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.\n";
     }
@@ -101,17 +105,31 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
         }
     }
 
-    // Alpha
+    // Light translation — arrow keys move x/y, comma/period move z
     if (key == GLFW_KEY_UP && (action == GLFW_PRESS || action == GLFW_REPEAT))
-        adjustAlpha(state, 0.05f);
+        translateLight(state.light, 0.0f, 0.1f, 0.0f);
     if (key == GLFW_KEY_DOWN && (action == GLFW_PRESS || action == GLFW_REPEAT))
+        translateLight(state.light, 0.0f, -0.1f, 0.0f);
+    if (key == GLFW_KEY_RIGHT && (action == GLFW_PRESS || action == GLFW_REPEAT))
+        translateLight(state.light, 0.1f, 0.0f, 0.0f);
+    if (key == GLFW_KEY_LEFT && (action == GLFW_PRESS || action == GLFW_REPEAT))
+        translateLight(state.light, -0.1f, 0.0f, 0.0f);
+    if (key == GLFW_KEY_PERIOD && (action == GLFW_PRESS || action == GLFW_REPEAT))
+        translateLight(state.light, 0.0f, 0.0f, 0.1f);   // > key (unshifted .)
+    if (key == GLFW_KEY_COMMA && (action == GLFW_PRESS || action == GLFW_REPEAT))
+        translateLight(state.light, 0.0f, 0.0f, -0.1f);  // < key (unshifted ,)
+
+    // Alpha ([ / ])
+    if (key == GLFW_KEY_RIGHT_BRACKET && (action == GLFW_PRESS || action == GLFW_REPEAT))
+        adjustAlpha(state, 0.05f);
+    if (key == GLFW_KEY_LEFT_BRACKET && (action == GLFW_PRESS || action == GLFW_REPEAT))
         adjustAlpha(state, -0.05f);
 
-    // Floor colour (left / right arrow)
-    if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS)
-        cycleFloorColor(state, 1);
-    if (key == GLFW_KEY_LEFT && action == GLFW_PRESS)
+    // Floor colour (N / M)
+    if (key == GLFW_KEY_N && action == GLFW_PRESS)
         cycleFloorColor(state, -1);
+    if (key == GLFW_KEY_M && action == GLFW_PRESS)
+        cycleFloorColor(state, 1);
 
     // Ball colour (Z / X)
     if (key == GLFW_KEY_Z && action == GLFW_PRESS)
@@ -124,6 +142,15 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
         cycleLightColor(state, -1);
     if (key == GLFW_KEY_L && action == GLFW_PRESS)
         cycleLightColor(state, 1);
+
+    // Texture toggles
+    if (key == GLFW_KEY_B && action == GLFW_PRESS)
+        state.colourTexEnabled = !state.colourTexEnabled;
+    if (key == GLFW_KEY_V && action == GLFW_PRESS)
+        state.displacementTexEnabled = !state.displacementTexEnabled;
+    if (key == GLFW_KEY_C && action == GLFW_PRESS)
+        state.alphaTexEnabled = !state.alphaTexEnabled;
+
 }
 
 void testPointLight();
@@ -139,13 +166,13 @@ int main()
     }
     catch (const char *e)
     {
-        cout << e << endl;
-        throw;
+        cerr << (e ? e : "Unknown setup error") << endl;
+        return -1;
     }
 
     // ---- Add code here ----
 
-    state = createInitialState(0.0f, 0.0f, 0.0f);
+    state = createInitialState(0.0f, 1.0f, 0.0f);
 
     GLuint sphereShader = LoadShaders("sphere.vert", "sphere.frag");
     GLuint floorShader  = LoadShaders("floor.vert",  "floor.frag");
@@ -153,7 +180,7 @@ int main()
     SphereMesh ball  = generateSphere(state.sphereStacks, state.sphereSectors, 1.0f);
     uploadSphereToGPU(ball);
 
-    PlaneMesh ground = generatePlane(state.floorResolution, 10.0f);
+    PlaneMesh ground = generatePlane(state.floorResolution, 1000.0f);
     uploadPlaneToGPU(ground);
 
     GLuint colourTex       = createColourTexture(512, 512);
@@ -164,8 +191,8 @@ int main()
 
     // Fixed camera
     Matrix4 view = Matrix4::lookAt(
-        Vector3(0.0f, 4.0f, 7.0f),
-        Vector3(0.0f, 0.0f, 0.0f),
+        Vector3(0.0f, 3.0f, 8.0f),
+        Vector3(0.0f, 1.0f, 0.0f),
         Vector3(0.0f, 1.0f, 0.0f)
     );
     Matrix4 proj = Matrix4::perspective(45.0f, 1.0f, 0.1f, 100.0f);
@@ -180,13 +207,15 @@ int main()
         updateSphereResolution(ball, state.sphereStacks, state.sphereSectors, 1.0f);
 
         // Build model matrix from current rotations
-        Matrix4 model = Matrix4::rotateX(state.rotX)
-            .multiply(Matrix4::rotateY(state.rotY))
-            .multiply(Matrix4::rotateZ(state.rotZ));
+        Matrix4 model = Matrix4::translate(0.0f, 1.0f, 0.0f)
+            .multiply(Matrix4::rotateX(state.rotX)
+            .multiply(Matrix4::rotateY(state.rotY)
+            .multiply(Matrix4::rotateZ(state.rotZ))));
 
         // --- Draw floor ---
         glUseProgram(floorShader);
-        glUniformMatrix4fv(glGetUniformLocation(floorShader, "uModel"),      1, GL_TRUE, Matrix4::identity().getData());
+        glUniformMatrix4fv(glGetUniformLocation(floorShader, "uModel"), 1, GL_TRUE,
+            Matrix4::translate(0.0f, -0.001f, 0.0f).getData());
         glUniformMatrix4fv(glGetUniformLocation(floorShader, "uView"),       1, GL_TRUE, view.getData());
         glUniformMatrix4fv(glGetUniformLocation(floorShader, "uProjection"), 1, GL_TRUE, proj.getData());
         glUniform3f(glGetUniformLocation(floorShader, "uLightPos"),

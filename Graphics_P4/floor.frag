@@ -32,6 +32,7 @@ void main() {
 
     vec3 k = uFloorColour * uBallColour.rgb;
 
-    vec3 finalColour = k * E;
+    vec3 ambient = uFloorColour * 0.15;
+    vec3 finalColour = ambient + k * E;
     FragColour = vec4(finalColour, 1.0);
 }

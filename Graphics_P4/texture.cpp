@@ -24,9 +24,9 @@ GLuint createColourTexture(int width, int height) {
 
             if (dist < radius) { // a dimple.
                 //write a darker colour to the pixel data 
-                pixelData[index] = 0;       //red
-                pixelData[index + 1] = 0;   //green
-                pixelData[index + 2] = 0;   //blue
+                pixelData[index] = 80;       //red
+                pixelData[index + 1] = 80;   //green
+                pixelData[index + 2] = 80;   //blue
                 pixelData[index + 3] = 255; // alpha channel
             } else { // a flat area
                 //write a lighter colour to the pixel data 
@@ -48,7 +48,7 @@ GLuint createColourTexture(int width, int height) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     // Allocate texture storage and upload the pixel data
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixelData);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixelData);
     
 
     //delete the pixel data after creating the texture

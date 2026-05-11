@@ -13,7 +13,7 @@ PointLight createDefaultLight(float cx, float cy, float cz) {
     light.b = 1.0f;
 
     //Intensity of light    
-    light.intensity = 2.0f;
+    light.intensity = 0.5f;
 
     return light;
 }
@@ -31,7 +31,7 @@ void setLightColour(PointLight& light, float r, float g, float b) {
 void resetLight(PointLight& light) {
     light.position = light.initialPosition;
     light.r = light.b = light.g = 1.0f;
-    light.intensity = 2.0f;
+    light.intensity = 0.5f;
 }
 
 //to be moved to Floor Fragment shader to avoid recalculation of light colour for each fragment on the floor
